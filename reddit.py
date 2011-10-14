@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 #!/usr/bin/env python3
-=======
-#!/usr/bin/env python
->>>>>>> 8e8aa67e62cbac87004df3245fd748555ac7f71a
 # -*- coding: utf-8 -*-
 
 from json import loads
@@ -19,15 +15,9 @@ def user(name):
     try:
         response = urlopen(url).readall().decode('utf-8')
     except HTTPError:
-<<<<<<< HEAD
         return (None, None)
     data = loads(response)['data']
     return (data['link_karma'], data['comment_karma'])
-=======
-        return (name, None, None)
-    data = loads(response)['data']
-    return (name, data['link_karma'], data['comment_karma'])
->>>>>>> 8e8aa67e62cbac87004df3245fd748555ac7f71a
 
 def rand_item(sub='all'):
     result = []
@@ -35,13 +25,9 @@ def rand_item(sub='all'):
     try:
         data = loads(urlopen(url).read().decode('utf-8'))
     except ValueError:
-<<<<<<< HEAD
         return None, None
     if data.get('error', None) == '404':
         return None, None
-=======
-        return None
->>>>>>> 8e8aa67e62cbac87004df3245fd748555ac7f71a
     posts = data['data']['children']
     post_data = choice(posts)['data']
     title = post_data['title']
@@ -53,7 +39,6 @@ def rand_item(sub='all'):
                 
 
 
-<<<<<<< HEAD
 def main():
     from sys import argv
     if len(argv) < 2:
@@ -88,11 +73,6 @@ def main():
     else:
         print('Invalid command: {}. Valid commands are: user, random.'.format(command))
             
-=======
-#def main():
-
-
->>>>>>> 8e8aa67e62cbac87004df3245fd748555ac7f71a
 if __name__ == '__main__':
 	main()
 
