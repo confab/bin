@@ -1,0 +1,6 @@
+#!/bin/bash
+
+while file="$(zenity --file-selection)"; do
+    mplayer -fs "$file"
+    cd $(dirname "$file")
+done
