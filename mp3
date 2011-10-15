@@ -1,0 +1,111 @@
+#! /bin/bash
+
+device_path="/media/PHONE CARD/Music"
+prior_dir="$(pwd)"
+app_name="$(basename "$0")"
+music_types=( "mp3" "ogg" "wma" "m4a" "mp4" )
+self="$0"
+
+function is_music(){
+    ext="${1#*.}"
+    for type in "${music_types[@]}"; do
+        [[ "$ext" == "$type" ]] && return 0
+    done
+    return 1
+}
+
+
+# Check for fatal errors
+errors=0
+if [[ ! -e "$device_path" ]]; then
+    echo "Mp3 player not found."
+    let errors++
+fi
+if [[ ! "$1" ]]; then
+    echo "One or more arguments (music files) required."
+    let errors++
+fi
+if [[ ! "$(which tagtool)" ]]; then
+    echo "tagtool required; you should be able to download this through your package manager."
+    let errors++
+fi
+if [[ ! "$(which ffmpeg)" ]]; then
+    echo "ffmpeg required; you should be able to download this through your package manager."
+    let errors++
+fi
+if [[ $errors -gt 0 ]]; then
+    echo "Quitting with $errors fatal errors; nothing converted or copied."
+    exit 1
+fi
+
+
+while [[ -n "$1" ]]; do
+
+    echo "looking at file $1"
+
+    if [[ -d "$1" ]]; then
+        ls -1 "$1" | while read FILE; do "$self" "$1/$FILE"; done
+        echo "entering directory $1"
+        shift
+        continue
+    fi
+    
+    if ! is_music "$1"; then
+        echo "$1 is not music, continuing"
+        shift
+        continue
+    fi
+    
+    echo "$1 is music"
+
+    cd "$(dirname "$1")"
+
+    filetype="$(echo $1 | awk -F . '{print $NF}')"
+    filename="$(basename "$1")"
+
+    if [[ $filetype == "ogg" ]]; then
+        title="$(tagtool --dump "$1" | grep "\<title\> \+" | cut -d \  -f2- | cut -d \" -f2)"
+        album="$(tagtool --dump "$1" | grep "\<album\> \+" | cut -d \  -f2- | cut -d \" -f2)"
+        artist="$(tagtool --dump "$1" | grep "\<artist\> \+" | cut -d \  -f2- | cut -d \" -f2)"
+    elif [[ $filetype == "mp3" ]]; then    # WMA not catered for yet.
+        title="$(tagtool --dump "$1" | grep --context=1 TIT2 | tail -n 1)"
+        album="$(tagtool --dump "$1" | grep --context=1 TALB | tail -n 1)"
+        for tag in "TPE1" "TPE2" "TPE3" "TPE4"; do
+            artist="$(tagtool --dump "$1" | grep --context=1 "$tag" | tail -n 1)"
+            if [[ -n "$artist" ]]; then
+                break
+            fi
+        done
+    fi
+    # If all else fails, derive details from file path.
+    if [[ -z $title ]]; then
+        title="$(basename "$1" .$filetype)"
+    fi
+    if [[ -z $album ]]; then
+        album="$(pwd | awk -F / '{print $NF}')"
+    fi
+    if [[ -z $artist ]]; then
+        artist="$(pwd | awk -F / '{print $(NF-1)}')"
+    fi
+
+    dest="$(echo "$device_path/$artist/$album" | sed -e 's/\t//g')"
+    if [[ ! -e "$dest" ]]; then
+        echo "$dest does not exist; creating."
+        mkdir -p "$dest"
+    fi
+
+    if [[ $filetype != "mp3" ]]; then
+        echo "Converting $filename"
+        ffmpeg -i "$filename" "$dest/$title.mp3" 2>/dev/null
+    else
+        echo "Copying $filename"
+        cp -R "$filename" "$dest"
+    fi
+    cd "$prior_dir"
+    title=
+    album=
+    artist=
+    shift
+done
+cd "$prior_dir"
+echo "Completed successfully."
