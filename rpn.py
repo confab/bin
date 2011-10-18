@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import deque
-from operator import add, sub, mul, truediv
+from operator import add, mod, mul, sub, truediv
 
 class InputError(Exception): pass
 
@@ -10,7 +10,9 @@ operators = {
             '-': sub,
             '*': mul,
             '/': truediv,
-            '**': pow
+            '**': pow,
+            '^': pow,
+            '%': mod
             }
 
 def eval_rpn(*seq):
@@ -24,10 +26,9 @@ def eval_rpn(*seq):
         except ValueError:
             try:
                 b, a = float(stack.pop()), float(stack.pop())
+                oper = operators[token]
             except IndexError:
                 raise InputError('Insufficient operands.')
-            try:
-                oper = operators[token]
             except KeyError:
                 raise InputError('Invalid operator: {}'.format(token))
             stack.append(oper(a, b))
